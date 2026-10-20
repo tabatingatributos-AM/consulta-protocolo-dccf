@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Consulta pública de protocolos da DCCF de Tabatinga, Amazonas.">
+    <title>Consulta de Protocolo — DCCF Tabatinga</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f4f7;
+            color: #243746;
+        }
+
+        header {
+            background: #174a68;
+            color: white;
+            padding: 28px 18px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 25px;
+        }
+
+        header p {
+            margin: 0;
+        }
+
+        main {
+            width: min(100% - 32px, 600px);
+            margin: 35px auto;
+        }
+
+        .cartao {
+            background: white;
+            padding: 24px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000012;
+        }
+
+        label {
+            display: block;
+            margin: 18px 0 7px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #b8c4ce;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 22px;
+            padding: 13px;
+            background: #174a68;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #10374f;
+        }
+
+        .aviso {
+            margin-top: 20px;
+            padding: 13px;
+            background: #fff4d6;
+            border-radius: 5px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        footer {
+            padding: 20px;
+            text-align: center;
+            color: #526575;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Consulta de Protocolo</h1>
+        <p>Prefeitura de Tabatinga/AM — DCCF</p>
+    </header>
+
+    <main>
+        <section class="cartao">
+            <h2>Acompanhe seu protocolo</h2>
+
+            <p>
+                Informe os dados disponíveis no comprovante
+                para consultar a situação do seu atendimento.
+            </p>
+
+            <form id="formConsulta">
+                <label for="numero">Número do protocolo</label>
+                <input
+                    id="numero"
+                    name="numero"
+                    type="text"
+                    maxlength="20"
+                    required
+                    autocomplete="off"
+                    placeholder="Ex.: 2026-0001"
+                >
+
+                <label for="codigo">Código de consulta</label>
+                <input
+                    id="codigo"
+                    name="codigo"
+                    type="text"
+                    maxlength="36"
+                    required
+                    autocomplete="off"
+                    placeholder="Código presente no QR Code ou comprovante"
+                >
+
+                <button type="submit">Consultar protocolo</button>
+            </form>
+
+            <div class="aviso" id="mensagem" role="status">
+                A página está em preparação. A consulta será ativada
+                após a configuração segura do serviço de consulta.
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        Prefeitura de Tabatinga/AM · DCCF
+    </footer>
+
+    <script>
+        document.getElementById("formConsulta").addEventListener(
+            "submit",
+            function (evento) {
+                evento.preventDefault();
+
+                document.getElementById("mensagem").textContent =
+                    "A consulta ainda está sendo configurada. " +
+                    "Este formulário não consulta dados reais.";
+            }
+        );
+    </script>
+</body>
+</html>
