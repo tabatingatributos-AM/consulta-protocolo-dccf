@@ -1,0 +1,30 @@
+# Ambiente virtual
+.venv/
+venv/
+
+# Segredos e variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Banco de dados local
+db.sqlite3
+
+# Arquivos gerados
+staticfiles/
+media/
+
+# Configurações locais
+.vscode/
+
+# Bancos de dados
+*.sqlite3
+*.db
+
+# Chaves e certificados
+*.pem
+*.key
