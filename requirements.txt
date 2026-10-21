@@ -3,3 +3,4 @@ gunicorn
 whitenoise
 dj-database-url
 psycopg[binary]
+django-cors-headers==4.9.0

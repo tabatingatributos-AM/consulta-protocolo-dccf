@@ -147,17 +147,64 @@
         Prefeitura de Tabatinga/AM · DCCF
     </footer>
 
+    
     <script>
-        document.getElementById("formConsulta").addEventListener(
-            "submit",
-            function (evento) {
-                evento.preventDefault();
+        const API_BASE = "https://consulta-protocolo-dccf.onrender.com";
 
-                document.getElementById("mensagem").textContent =
-                    "A consulta ainda está sendo configurada. " +
-                    "Este formulário não consulta dados reais.";
+        const formulario = document.getElementById("formConsulta");
+        const mensagem = document.getElementById("mensagem");
+
+        formulario.addEventListener("submit", async function (evento) {
+            evento.preventDefault();
+
+            const numero = document.getElementById("numero").value.trim();
+            const codigo = document.getElementById("codigo").value.trim();
+
+            if (!numero || !codigo) {
+                mensagem.textContent = "Informe o número e o código de consulta.";
+                return;
             }
-        );
+
+            mensagem.textContent = "Consultando protocolo...";
+            
+            const botao = formulario.querySelector("button[type='submit']");
+            botao.disabled = true;
+
+            try {
+                const url = `${API_BASE}/api/protocolos/${encodeURIComponent(numero)}/${encodeURIComponent(codigo)}/`;
+
+                const resposta = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                const dados = await resposta.json();
+
+                if (!resposta.ok) {
+                    mensagem.textContent =
+                        dados.erro || dados.error || "Protocolo não encontrado. Confira os dados informados.";
+                    return;
+                }
+
+                mensagem.textContent =
+                    `Protocolo: ${dados.numero ?? numero}\n` +
+                    `Setor: ${dados.setor ?? "Não informado"}\n` +
+                    `Situação: ${dados.situacao ?? dados.status ?? "Não informada"}\n` +
+                    `Data de criação: ${dados.data_criacao ?? "Não informada"}\n` +
+                    `Última atualização: ${dados.data_atualizacao ?? "Não informada"}`;
+
+                mensagem.style.whiteSpace = "pre-line";
+
+            } catch (erro) {
+                mensagem.textContent =
+                    "Não foi possível realizar a consulta. Tente novamente mais tarde.";
+            } finally {
+                botao.disabled = false;
+            }
+        });
     </script>
+
 </body>
 </html>
