@@ -153,6 +153,17 @@
 
         const formulario = document.getElementById("formConsulta");
         const mensagem = document.getElementById("mensagem");
+        const parametros = new URLSearchParams(window.location.search);
+
+        const numeroUrl = parametros.get("numero");
+        const codigoUrl = parametros.get("codigo");
+
+        if (numeroUrl && codigoUrl) {
+            document.getElementById("numero").value = numeroUrl;
+            document.getElementById("codigo").value = codigoUrl;
+
+            formulario.requestSubmit();
+        }
 
         formulario.addEventListener("submit", async function (evento) {
             evento.preventDefault();
