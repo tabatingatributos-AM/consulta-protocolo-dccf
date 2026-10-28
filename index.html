@@ -36,7 +36,7 @@
         }
 
         main {
-            width: min(100% - 32px, 600px);
+            width: min(100% - 32px, 700px);
             margin: 35px auto;
         }
 
@@ -45,6 +45,7 @@
             padding: 24px;
             border-radius: 10px;
             box-shadow: 0 2px 8px #00000012;
+            margin-bottom: 20px;
         }
 
         label {
@@ -77,13 +78,100 @@
             background: #10374f;
         }
 
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
         .aviso {
             margin-top: 20px;
             padding: 13px;
             background: #fff4d6;
             border-radius: 5px;
             font-size: 14px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .resultado {
+            display: none;
+        }
+
+        .resultado h2 {
+            margin-top: 0;
+            font-size: 21px;
+        }
+
+        .dado {
+            padding: 10px 0;
+            border-bottom: 1px solid #e3e9ee;
             line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .dado:last-child {
+            border-bottom: none;
+        }
+
+        .dado strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .item {
+            border: 1px solid #dce4ea;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        .item h3 {
+            font-size: 16px;
+            margin: 0 0 10px;
+        }
+
+        .item p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 8px 0;
+            white-space: pre-line;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 5px;
+            background: #e8eef3;
+            color: #243746;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status.aberta,
+        .status.pendente,
+        .status.correcao {
+            background: #fff0d2;
+            color: #805300;
+        }
+
+        .status.resolvida,
+        .status.recebido,
+        .status.concluido,
+        .status.dispensado {
+            background: #dff4e5;
+            color: #176534;
+        }
+
+        .status.cancelada {
+            background: #fbe4e4;
+            color: #8a2525;
+        }
+
+        .vazio {
+            color: #526575;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         footer {
@@ -116,7 +204,7 @@
                     id="numero"
                     name="numero"
                     type="text"
-                    maxlength="20"
+                    maxlength="30"
                     required
                     autocomplete="off"
                     placeholder="Ex.: 2026-0001"
@@ -141,6 +229,27 @@
                 ou acesse esta página pelo QR Code do comprovante.
             </div>
         </section>
+
+        <section class="cartao resultado" id="resultado">
+            <h2>Dados do protocolo</h2>
+            <div id="dadosProtocolo"></div>
+        </section>
+
+        <section class="cartao resultado" id="secaoPendencias">
+            <h2>Pendências do protocolo</h2>
+            <p class="vazio">
+                Confira abaixo as pendências registradas para seu atendimento.
+            </p>
+            <div id="listaPendencias"></div>
+        </section>
+
+        <section class="cartao resultado" id="secaoDocumentos">
+            <h2>Documentos necessários</h2>
+            <p class="vazio">
+                Confira a situação dos documentos solicitados para seu atendimento.
+            </p>
+            <div id="listaDocumentos"></div>
+        </section>
     </main>
 
     <footer>
@@ -156,9 +265,220 @@
         const campoCodigo = document.getElementById("codigo");
         const botao = formulario.querySelector("button[type='submit']");
 
+        const resultado = document.getElementById("resultado");
+        const dadosProtocolo = document.getElementById("dadosProtocolo");
+
+        const secaoPendencias = document.getElementById("secaoPendencias");
+        const listaPendencias = document.getElementById("listaPendencias");
+
+        const secaoDocumentos = document.getElementById("secaoDocumentos");
+        const listaDocumentos = document.getElementById("listaDocumentos");
+
+        function criarElemento(tag, texto, classe) {
+            const elemento = document.createElement(tag);
+
+            if (texto !== undefined && texto !== null) {
+                elemento.textContent = String(texto);
+            }
+
+            if (classe) {
+                elemento.className = classe;
+            }
+
+            return elemento;
+        }
+
+        function formatarData(valor) {
+            if (!valor) {
+                return "Não informada";
+            }
+
+            const data = new Date(valor);
+
+            if (Number.isNaN(data.getTime())) {
+                return valor;
+            }
+
+            return data.toLocaleString("pt-BR");
+        }
+
+        function formatarStatus(status) {
+            const nomes = {
+                ABERTA: "Aberta",
+                RESOLVIDA: "Resolvida",
+                CANCELADA: "Cancelada",
+                PENDENTE: "Pendente",
+                RECEBIDO: "Recebido",
+                CORRECAO: "Precisa de correção",
+                DISPENSADO: "Dispensado",
+                AGUARDANDO: "Aguardando",
+                EM_ATENDIMENTO: "Em atendimento",
+                CONCLUIDO: "Concluído"
+            };
+
+            return nomes[status] || status || "Não informada";
+        }
+
+        function classeStatus(status) {
+            const classes = {
+                ABERTA: "aberta",
+                RESOLVIDA: "resolvida",
+                CANCELADA: "cancelada",
+                PENDENTE: "pendente",
+                RECEBIDO: "recebido",
+                CORRECAO: "correcao",
+                DISPENSADO: "dispensado",
+                CONCLUIDO: "concluido"
+            };
+
+            return classes[status] || "";
+        }
+
+        function adicionarDado(container, titulo, valor) {
+            const linha = criarElemento("div", undefined, "dado");
+
+            linha.appendChild(criarElemento("strong", titulo));
+            linha.appendChild(
+                criarElemento("span", valor || "Não informado")
+            );
+
+            container.appendChild(linha);
+        }
+
+        function limparResultados() {
+            resultado.style.display = "none";
+            secaoPendencias.style.display = "none";
+            secaoDocumentos.style.display = "none";
+
+            dadosProtocolo.replaceChildren();
+            listaPendencias.replaceChildren();
+            listaDocumentos.replaceChildren();
+        }
+
+        function exibirProtocolo(dados) {
+            dadosProtocolo.replaceChildren();
+
+            adicionarDado(
+                dadosProtocolo,
+                "Número do protocolo",
+                dados.numero
+            );
+
+            adicionarDado(
+                dadosProtocolo,
+                "Setor responsável",
+                dados.setor
+            );
+
+            adicionarDado(
+                dadosProtocolo,
+                "Situação do atendimento",
+                formatarStatus(dados.situacao || dados.status)
+            );
+
+            adicionarDado(
+                dadosProtocolo,
+                "Data de criação",
+                formatarData(dados.data_criacao)
+            );
+
+            adicionarDado(
+                dadosProtocolo,
+                "Última atualização",
+                formatarData(dados.data_atualizacao)
+            );
+
+            resultado.style.display = "block";
+        }
+
+        function exibirPendencias(pendencias) {
+            listaPendencias.replaceChildren();
+
+            if (!Array.isArray(pendencias) || pendencias.length === 0) {
+                listaPendencias.appendChild(
+                    criarElemento(
+                        "p",
+                        "Não há pendências registradas para este protocolo.",
+                        "vazio"
+                    )
+                );
+            } else {
+                pendencias.forEach(function (pendencia) {
+                    const item = criarElemento("article", undefined, "item");
+
+                    item.appendChild(
+                        criarElemento("h3", pendencia.descricao || "Pendência")
+                    );
+
+                    const status = criarElemento(
+                        "span",
+                        formatarStatus(pendencia.status),
+                        `status ${classeStatus(pendencia.status)}`
+                    );
+
+                    item.appendChild(status);
+
+                    if (pendencia.orientacao) {
+                        item.appendChild(
+                            criarElemento("p", "Orientação: " + pendencia.orientacao)
+                        );
+                    }
+
+                    listaPendencias.appendChild(item);
+                });
+            }
+
+            secaoPendencias.style.display = "block";
+        }
+
+        function exibirDocumentos(documentos) {
+            listaDocumentos.replaceChildren();
+
+            if (!Array.isArray(documentos) || documentos.length === 0) {
+                listaDocumentos.appendChild(
+                    criarElemento(
+                        "p",
+                        "Não há documentos necessários registrados para este protocolo.",
+                        "vazio"
+                    )
+                );
+            } else {
+                documentos.forEach(function (documento) {
+                    const item = criarElemento("article", undefined, "item");
+
+                    item.appendChild(
+                        criarElemento("h3", documento.nome || "Documento")
+                    );
+
+                    item.appendChild(
+                        criarElemento(
+                            "span",
+                            formatarStatus(documento.status),
+                            `status ${classeStatus(documento.status)}`
+                        )
+                    );
+
+                    if (documento.observacao) {
+                        item.appendChild(
+                            criarElemento(
+                                "p",
+                                "Observação: " + documento.observacao
+                            )
+                        );
+                    }
+
+                    listaDocumentos.appendChild(item);
+                });
+            }
+
+            secaoDocumentos.style.display = "block";
+        }
+
         async function consultarProtocolo() {
             const numero = campoNumero.value.trim();
             const codigo = campoCodigo.value.trim();
+
+            limparResultados();
 
             if (!numero || !codigo) {
                 mensagem.textContent =
@@ -176,6 +496,7 @@
                     `${encodeURIComponent(codigo)}/`;
 
                 const controlador = new AbortController();
+
                 const temporizador = setTimeout(
                     () => controlador.abort(),
                     30000
@@ -205,13 +526,12 @@
                 }
 
                 mensagem.textContent =
-                    `Protocolo: ${dados.numero ?? numero}\n` +
-                    `Setor: ${dados.setor ?? "Não informado"}\n` +
-                    `Situação: ${dados.situacao ?? dados.status ?? "Não informada"}\n` +
-                    `Data de criação: ${dados.data_criacao ?? "Não informada"}\n` +
-                    `Última atualização: ${dados.data_atualizacao ?? "Não informada"}`;
+                    "Consulta realizada com sucesso.";
 
-                mensagem.style.whiteSpace = "pre-line";
+                exibirProtocolo(dados);
+                exibirPendencias(dados.pendencias);
+                exibirDocumentos(dados.documentos);
+
             } catch (erro) {
                 console.error("Erro na consulta:", erro);
 
@@ -243,6 +563,5 @@
             consultarProtocolo();
         }
     </script>
-
 </body>
 </html>
