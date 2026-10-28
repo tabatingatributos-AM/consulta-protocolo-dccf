@@ -2,12 +2,34 @@
 import json
 import os
 import secrets
+import uuid
+from pathlib import Path
 
-from django.http import JsonResponse
+from django.conf import settings
+from django.http import HttpResponse, JsonResponse
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import ProtocoloPublico
+
+
+def inicio(request):
+    """Exibe a página HTML que já existe na raiz do projeto."""
+    caminho_html = Path(settings.BASE_DIR) / "index.html"
+
+    if not caminho_html.is_file():
+        return HttpResponse(
+            "Arquivo index.html não encontrado.",
+            status=500,
+            content_type="text/plain; charset=utf-8",
+        )
+
+    conteudo = caminho_html.read_text(encoding="utf-8")
+
+    return HttpResponse(
+        conteudo,
+        content_type="text/html; charset=utf-8",
+    )
 
 
 def consultar_protocolo(request, numero, codigo_consulta):
@@ -55,14 +77,15 @@ def sincronizar_protocolo(request):
         dados = json.loads(request.body)
 
         numero = str(dados["numero"]).strip()
-        codigo_consulta = str(dados["codigo_consulta"])
+        codigo_consulta = uuid.UUID(
+            str(dados["codigo_consulta"])
+        )
         data_criacao = parse_datetime(dados["data_criacao"])
         setor = str(dados["setor"]).strip()
         situacao = str(dados["situacao"]).strip()
-        data_atualizacao = parse_datetime(dados["data_atualizacao"])
-
-        import uuid
-        codigo_consulta = uuid.UUID(codigo_consulta)
+        data_atualizacao = parse_datetime(
+            dados["data_atualizacao"]
+        )
 
         if (
             not numero
@@ -75,8 +98,8 @@ def sincronizar_protocolo(request):
 
     except (KeyError, ValueError, TypeError, json.JSONDecodeError):
         return JsonResponse(
-        {"erro": "Dados inválidos ou incompletos."},
-        status=400,
+            {"erro": "Dados inválidos ou incompletos."},
+            status=400,
         )
 
     protocolo, criado = ProtocoloPublico.objects.update_or_create(

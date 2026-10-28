@@ -147,55 +147,60 @@
         Prefeitura de Tabatinga/AM · DCCF
     </footer>
 
-    
     <script>
         const API_BASE = "https://consulta-protocolo-dccf.onrender.com";
 
         const formulario = document.getElementById("formConsulta");
         const mensagem = document.getElementById("mensagem");
-        const parametros = new URLSearchParams(window.location.search);
+        const campoNumero = document.getElementById("numero");
+        const campoCodigo = document.getElementById("codigo");
+        const botao = formulario.querySelector("button[type='submit']");
 
-        const numeroUrl = parametros.get("numero");
-        const codigoUrl = parametros.get("codigo");
-
-        if (numeroUrl && codigoUrl) {
-            document.getElementById("numero").value = numeroUrl;
-            document.getElementById("codigo").value = codigoUrl;
-
-            formulario.requestSubmit();
-        }
-
-        formulario.addEventListener("submit", async function (evento) {
-            evento.preventDefault();
-
-            const numero = document.getElementById("numero").value.trim();
-            const codigo = document.getElementById("codigo").value.trim();
+        async function consultarProtocolo() {
+            const numero = campoNumero.value.trim();
+            const codigo = campoCodigo.value.trim();
 
             if (!numero || !codigo) {
-                mensagem.textContent = "Informe o número e o código de consulta.";
+                mensagem.textContent =
+                    "Informe o número e o código de consulta.";
                 return;
             }
 
             mensagem.textContent = "Consultando protocolo...";
-            
-            const botao = formulario.querySelector("button[type='submit']");
             botao.disabled = true;
 
             try {
-                const url = `${API_BASE}/api/protocolos/${encodeURIComponent(numero)}/${encodeURIComponent(codigo)}/`;
+                const url =
+                    `${API_BASE}/api/protocolos/` +
+                    `${encodeURIComponent(numero)}/` +
+                    `${encodeURIComponent(codigo)}/`;
 
-                const resposta = await fetch(url, {
-                    method: "GET",
-                    headers: {
-                        "Accept": "application/json"
-                    }
-                });
+                const controlador = new AbortController();
+                const temporizador = setTimeout(
+                    () => controlador.abort(),
+                    30000
+                );
+
+                let resposta;
+
+                try {
+                    resposta = await fetch(url, {
+                        method: "GET",
+                        headers: { "Accept": "application/json" },
+                        cache: "no-store",
+                        signal: controlador.signal
+                    });
+                } finally {
+                    clearTimeout(temporizador);
+                }
 
                 const dados = await resposta.json();
 
                 if (!resposta.ok) {
                     mensagem.textContent =
-                        dados.erro || dados.error || "Protocolo não encontrado. Confira os dados informados.";
+                        dados.erro ||
+                        dados.error ||
+                        "Protocolo não encontrado. Confira os dados informados.";
                     return;
                 }
 
@@ -207,14 +212,36 @@
                     `Última atualização: ${dados.data_atualizacao ?? "Não informada"}`;
 
                 mensagem.style.whiteSpace = "pre-line";
-
             } catch (erro) {
-                mensagem.textContent =
-                    "Não foi possível realizar a consulta. Tente novamente mais tarde.";
+                console.error("Erro na consulta:", erro);
+
+                if (erro.name === "AbortError") {
+                    mensagem.textContent =
+                        "A consulta demorou mais de 30 segundos. Tente novamente.";
+                } else {
+                    mensagem.textContent =
+                        "Falha de conexão com o serviço de consulta. Tente novamente.";
+                }
             } finally {
                 botao.disabled = false;
             }
+        }
+
+        formulario.addEventListener("submit", function (evento) {
+            evento.preventDefault();
+            consultarProtocolo();
         });
+
+        // Preenche os campos pelo QR Code e faz uma única consulta.
+        const parametros = new URLSearchParams(window.location.search);
+        const numeroUrl = parametros.get("numero");
+        const codigoUrl = parametros.get("codigo");
+
+        if (numeroUrl && codigoUrl) {
+            campoNumero.value = numeroUrl;
+            campoCodigo.value = codigoUrl;
+            consultarProtocolo();
+        }
     </script>
 
 </body>

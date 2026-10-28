@@ -29,8 +29,14 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-if not DEBUG and not ALLOWED_HOSTS:
-    ALLOWED_HOSTS = ["consulta-protocolo-dccf.onrender.com"]
+if not DEBUG:
+    ALLOWED_HOSTS = list(set(
+        ALLOWED_HOSTS + [
+            "consulta-protocolo-dccf.onrender.com",
+            "127.0.0.1",
+            "localhost",
+        ]
+    ))
 
 
 # Application definition

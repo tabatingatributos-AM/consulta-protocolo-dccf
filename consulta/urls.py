@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.inicio, name="inicio"),
     path(
         "api/protocolos/<str:numero>/<uuid:codigo_consulta>/",
         views.consultar_protocolo,
